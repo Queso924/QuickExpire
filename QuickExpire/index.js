@@ -64,8 +64,6 @@ app.post('/send-email', async (req, res) => {
 });
 
 
-const { google } = require('googleapis');
-
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,  // Usa las variables de entorno
   process.env.GOOGLE_CLIENT_SECRET,
