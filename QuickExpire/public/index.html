@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Subir Archivo Temporal</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .tenor-gif-embed iframe {
+      mix-blend-mode: multiply;
+      background: none !important;
+      pointer-events: none;
+    }
+    .tenor-gif-embed {
+      overflow: hidden;
+      height: 100px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="logo.png" alt="logo">
+    <h1>¡Envía archivos temporales!</h1>
+    <form id="uploadForm">
+      <input type="file" name="archivo" id="archivo" required>
+      <label for="archivo" class="file-label">📁 Seleccionar Archivo</label>
+      <p id="file-name"></p>
+      
+      <label for="email" style="font-size: 20px; color: #0056b3;"><b><u>(opcional)</u><br>
+      Enviar Link de descarga a:</b></label>
+      <input type="email" name="email" id="email" placeholder="Tu correo..." class="email-input">
+      <br><br>
+      <p><b>Seleccione el tiempo de Expiración:</b></p>
+      <div class="expiration-buttons">
+        <button type="button" class="time-button" data-time="1">1 min</button>
+        <button type="button" class="time-button selected" data-time="5">5 min</button>
+        <button type="button" class="time-button" data-time="15">15 min</button>
+        <button type="button" class="time-button" data-time="20">20 min</button>
+      </div>
+      
+      <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+        <p class="progress-text" id="progressText">0%</p>
+      </div>
+      
+      <div id="loadingGif" style="display: none; margin-top: 10px; text-align: center; width: 150px; margin-left: auto; margin-right: auto;">
+        <img src="loading.gif" alt="Cargando..." width="50">
+        <p>Cargando, por favor no cierre esta ventana</p>
+      </div>
+      
+      <div id="successGif" style="display: none; margin-top: 10px; text-align: center; width: 150px; margin-left: auto; margin-right: auto;">
+        <div class='tenor-gif-embed' data-postid='18188570' data-share-method='host' data-aspect-ratio='1.17647' data-width='100%'>
+          <a href='https://tenor.com/view/checkmark-transparent-gif-18188570'>Checkmark Transparent Sticker</a>
+          from <a href='https://tenor.com/search/checkmark+transparent-stickers'>Checkmark Transparent Stickers</a>
+        </div>
+      </div>
+      
+      <button type="button" id="uploadButton" class="upload-button">Subir Archivo</button>
+    </form>
+    <p id="statusText"></p>
+  </div>
+  
+  <script>
+    // Mostrar el nombre del archivo seleccionado
+    document.getElementById("archivo").addEventListener("change", function() {
+      const file = this.files[0];
+      if (file) {
+        document.getElementById("file-name").textContent = file.name;
+      }
+    });
+    
+    // Selección del tiempo de expiración
+    let selectedTime = 5;
+    document.querySelectorAll(".time-button").forEach(button => {
+      button.addEventListener("click", function() {
+        document.querySelectorAll(".time-button").forEach(btn => btn.classList.remove("selected"));
+        this.classList.add("selected");
+        selectedTime = this.dataset.time;
+      });
+    });
+
+    // Variables para controlar el temporizador y saber si ya se mostró el gif de loading
+    let loadingTimeout = null;
+    let isLoadingGifShown = false;
+
+    document.getElementById("uploadButton").addEventListener("click", function() {
+      const fileInput = document.getElementById("archivo");
+      const emailInput = document.getElementById("email");
+
+      if (!fileInput.files.length) {
+        alert("Selecciona un archivo antes de subirlo.");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const email = emailInput.value.trim();
+
+      const formData = new FormData();
+      formData.append("archivo", file);
+      formData.append("time", selectedTime);
+      formData.append("email", email);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/upload", true);
+
+      // Actualizar la barra de progreso y, cuando llegue al 100%, iniciar el temporizador de 3 segundos
+      xhr.upload.onprogress = function(event) {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          document.getElementById("progressBar").style.width = percent + "%";
+          document.getElementById("progressText").textContent = percent + "%";
+
+          if (percent === 100 && !loadingTimeout) {
+            // Si la barra está al 100%, se espera 3 segundos para mostrar el gif de carga
+            loadingTimeout = setTimeout(() => {
+              document.getElementById('loadingGif').style.display = 'block';
+              isLoadingGifShown = true;
+            }, 3000);
+          }
+        }
+      };
+
+      // Cuando se recibe la respuesta del servidor
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          const response = JSON.parse(xhr.responseText);
+          const fileId = response.fileId;
+
+          // Si aún está pendiente el temporizador, se cancela para que no se muestre el gif
+          if (loadingTimeout) {
+            clearTimeout(loadingTimeout);
+            loadingTimeout = null;
+          }
+
+          if (isLoadingGifShown) {
+            // Si el gif de loading ya se mostró, se espera un momento antes de mostrar el gif de éxito
+            setTimeout(() => {
+              document.getElementById('loadingGif').style.display = 'none';
+              document.getElementById('successGif').style.display = 'block';
+              setTimeout(() => {
+                window.location.href = `/success.html?file=${encodeURIComponent(fileId)}&name=${encodeURIComponent(file.name)}&time=${encodeURIComponent(selectedTime)}`;
+              }, 2000);
+            }, 1000);
+          } else {
+            // Si el gif de loading no se mostró (es decir, el proceso fue rápido), se muestra el gif de éxito directamente
+            document.getElementById('successGif').style.display = 'block';
+            setTimeout(() => {
+              window.location.href = `/success.html?file=${encodeURIComponent(fileId)}&name=${encodeURIComponent(file.name)}&time=${encodeURIComponent(selectedTime)}`;
+            }, 2000);
+          }
+        } else {
+          alert("Error al subir archivo.");
+        }
+      };
+
+      xhr.onerror = function() {
+        document.getElementById("statusText").textContent = "Error de conexión.";
+      };
+
+      xhr.send(formData);
+    });
+  </script>
+  <script type="text/javascript" async src="https://tenor.com/embed.js"></script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Archivo Subido</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>✅ Archivo Subido</h1>
+    <p id="fileName"></p> <!-- Muestra el nombre del archivo -->
+    <h3>Previsualización:</h3>
+    <div id="previewContainer"></div> <!-- Contenedor para previsualización -->
+    <a class="download-link" id="downloadLink" href="#" target="_blank">📥 Descargar Archivo</a>
+    <button class="copy-button" onclick="copyLink()">📋 Copiar Enlace</button>
+    
+    <p class="countdown" id="countdown"></p>
+    
+    <br><br>
+    <a class="download-link" href="/">⬅️ Subir otro archivo</a>
+  </div>
+  
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const file = urlParams.get("file");
+      const fileName = urlParams.get("name");
+      if (fileName) {
+        document.getElementById("fileName").textContent = `📄 ${fileName}`;
+      } else {
+        document.getElementById("fileName").textContent = 'Archivo Desconocido';
+      }
+      const timeLeft = urlParams.get("time");
+      
+      if (!file) {
+        console.error("No se recibió un fileId en la URL");
+        return;
+      }
+      
+      if (fileName) {
+        document.getElementById("fileName").textContent = `📄 ${decodeURIComponent(fileName)}📄`;
+      }
+      
+      const fileUrl = `${window.location.origin}/download?file=${encodeURIComponent(file)}`;
+      document.getElementById("downloadLink").href = fileUrl;
+      
+      const previewContainer = document.getElementById("previewContainer");
+      const fileExtension = fileName && fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';
+
+      if (["jpg", "jpeg", "png", "gif"].includes(fileExtension)) {
+        previewContainer.innerHTML = `<img src="${fileUrl}" alt="Imagen subida" style="max-width: 50%; height: 50%; border-radius: 10px; margin-top: 10px; display: block; margin-left: auto; margin-right: auto;">`;
+      } else if (["mp4", "webm","mkv"].includes(fileExtension)) {
+        previewContainer.innerHTML = `En caso de vídeos de extensa duración, puede tardar unos minutos en poderse previsualizar.
+        <br>
+        <video controls style="max-width: 100%; margin-top: 10px;">
+          <source src="${fileUrl}" type="video/${fileExtension}">
+          Tu navegador no soporta el video.
+        </video>`;
+      } else if (["mp3", "wav"].includes(fileExtension)) {
+        previewContainer.innerHTML = `<audio controls style="margin-top: 10px;">
+          <source src="${fileUrl}" type="audio/${fileExtension}">
+          Tu navegador no soporta el audio.
+        </audio>`;
+      }
+      
+      let expirationTime = localStorage.getItem(`expirationTime_${file}`);
+      if (!expirationTime && timeLeft) {
+        expirationTime = Date.now() + (parseInt(timeLeft) * 60 * 1000);
+        localStorage.setItem(`expirationTime_${file}`, expirationTime);
+      }
+      
+      function updateCountdown() {
+  const storedExpiration = localStorage.getItem(`expirationTime_${file}`);
+  if (!storedExpiration) return;
+
+  const timeRemaining = storedExpiration - Date.now();
+  if (timeRemaining <= 0) {
+    window.location.href = "/error_expirado.html"; // Redirige cuando el contador llega a 0
+    return;
+  }
+
+  const minutes = Math.floor(timeRemaining / (1000 * 60));
+  const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+  document.getElementById("countdown").textContent = `Expira en: ${minutes}m ${seconds}s`;
+}
+
+setInterval(updateCountdown, 1000);
+updateCountdown();
+
+    });
+    
+    function copyLink() {
+      const link = window.location.href;
+      navigator.clipboard.writeText(link);
+      alert("Enlace copiado al portapapeles ✅");
+    }
+  </script>
+</body>
+</html>

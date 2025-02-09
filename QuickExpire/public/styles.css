@@ -1,0 +1,213 @@
+/* Reset básico */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+p {
+  font-size: 20px;
+  color: #0056b3;
+  margin-bottom: 25px;
+}
+
+img {
+  max-width: 100%; /* La imagen nunca será más ancha que su contenedor */
+  max-height: 600px; /* Aumentado */
+  height: auto; /* Mantiene la proporción original */
+  width: auto; /* Mantiene la proporción original */
+  display: block; /* Evita espacios adicionales */
+  margin: auto; /* Centra la imagen */
+}
+
+/* Estilo para el campo de correo electrónico */
+.email-input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border: 2px solid #007BFF;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+  transition: 0.3s ease-in-out;
+}
+
+.email-input:focus {
+  border-color: #0056b3;
+  box-shadow: 0px 0px 10px rgba(0, 123, 255, 0.5);
+}
+
+
+/* Fondo con gradiente */
+body {
+  background: linear-gradient(to right, #4facfe, #00f2fe);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  text-align: center;
+  padding: 30px; /* Aumentado */
+}
+
+/* Contenedor principal */
+.container {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 40px; /* Aumentado */
+  border-radius: 20px; /* Aumentado */
+  box-shadow: 0px 12px 35px rgba(0, 0, 0, 0.25);
+  width: 90%;
+  max-width: 700px; /* Aumentado */
+  animation: fadeIn 1s ease-in-out;
+}
+
+div.previewContainer {
+  width: 60%; /* Aumentado */
+  max-width: 80px; /* Aumentado */
+  animation: fadeIn 1s ease-in-out;
+}
+
+/* Animación de entrada */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Título */
+h1 {
+  font-size: 30px; /* Aumentado */
+  color: #0072b1;
+  margin-bottom: 25px;
+}
+
+/* Botón de selección de archivo */
+input[type="file"] {
+  display: none;
+}
+
+.file-label {
+  background: #ff7eb3;
+  color: white;
+  padding: 18px 28px; /* Aumentado */
+  border-radius: 30px; /* Aumentado */
+  cursor: pointer;
+  display: block;
+  font-size: 20px; /* Aumentado */
+  transition: all 0.3s;
+  margin: 15px auto;
+  width: max-content;
+}
+.file-label:hover {
+  background: #ff558a;
+  transform: scale(1.05);
+}
+
+/* Botones de tiempo de caducidad */
+.expiration-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px; /* Aumentado */
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.time-button {
+  padding: 24px 30px; /* Aumentado */
+  border: none;
+  background: #007BFF;
+  color: white;
+  font-size: 18px; /* Aumentado */
+  cursor: pointer;
+  border-radius: 10px; /* Aumentado */
+  transition: 0.3s;
+}
+.time-button:hover, .time-button.selected {
+  background: #0056b3;
+  transform: scale(1.05);
+}
+
+/* Barra de progreso */
+.progress-container {
+  width: 100%;
+  background: #ddd;
+  border-radius: 12px; /* Aumentado */
+  overflow: hidden;
+  margin-top: 20px;
+  height: 18px; /* Aumentado */
+  position: relative;
+}
+.progress-bar {
+  width: 0%;
+  height: 100%;
+  background: #2ecc71;
+  transition: width 0.4s ease;
+}
+.progress-text {
+  position: absolute;
+  width: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px; /* Aumentado */
+  color: #333;
+  font-weight: bold;
+}
+
+/* Botón de subir archivo */
+.upload-button {
+  margin-top: 25px;
+  padding: 35px 45px; /* Aumentado */
+  background: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 30px; /* Aumentado */
+  cursor: pointer;
+  font-size: 20px; /* Aumentado */
+  transition: all 0.3s ease-in-out;
+  display: block;
+  width: max-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+.upload-button:hover {
+  background: #27ae60;
+  transform: scale(1.05);
+  box-shadow: 0px 5px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Botón de descarga y copiar */
+.download-link, .copy-button {
+  display: block;
+  margin: 12px auto;
+  text-decoration: none;
+  color: white;
+  background-color: #4CAF50;
+  padding: 18px 28px; /* Aumentado */
+  border-radius: 30px; /* Aumentado */
+  font-size: 18px; /* Aumentado */
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  width: max-content;
+}
+.download-link:hover, .copy-button:hover {
+  background-color: #388E3C;
+  transform: scale(1.05);
+}
+.copy-button {
+  background-color: #008CBA;
+}
+.copy-button:hover {
+  background-color: #005f87;
+}
+
+/* Contador de expiración */
+.countdown {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1.8em; /* Aumentado */
+  margin-top: 25px;
+  color: #e74c3c;
+}
