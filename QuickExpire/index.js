@@ -16,8 +16,8 @@ const upload = multer({
   limits: { fileSize: 8 * 1024 * 1024 * 1024 } // Límite de 8GB (ajustable)
 });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10gb' })); 
+app.use(express.urlencoded({ limit: '10gb', extended: true }));
 
 // Configurar credenciales de Google Drive
 const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
@@ -166,6 +166,14 @@ app.get('/download', async (req, res) => {
 
 // Servir archivos estáticos
 app.use(express.static('public'));
+
+app.use((req, res, next) => {
+  req.setTimeout(0); // Deshabilita timeout en solicitudes largas
+  res.setTimeout(0);
+  next();
+});
+
+
 
 app.listen(port, () => {
   console.log(`Servidor corriendo en http://localhost:${port}`);
