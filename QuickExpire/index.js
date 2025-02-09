@@ -29,7 +29,6 @@ const drive = google.drive({ version: 'v3', auth });
 
 let tempFiles = {}; // Variable para llevar el control de los archivos temporales
 
-const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
