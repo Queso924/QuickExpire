@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer'); // Importar nodemailer
 const app = express();
-const port = 3000;
+const port = 10000;
 
 // Configurar que Express confíe en el proxy (útil en producción)
 app.set('trust proxy', true);
@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Configurar credenciales de Google Drive
-const credentials = require('./credentials.json');
+const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
 const auth = new google.auth.GoogleAuth({
   credentials: credentials,
   scopes: ['https://www.googleapis.com/auth/drive']
@@ -33,8 +33,8 @@ let tempFiles = {}; // Variable para llevar el control de los archivos temporale
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'quickexpire@gmail.com', // CAMBIA ESTO POR TU CORREO
-    pass: 'zgzw ipvn ltad zenb' // CAMBIA ESTO POR TU CONTRASEÑA O USA VARIABLES DE ENTORNO
+    user: process.env.EMAIL_USER, // CAMBIA ESTO POR TU CORREO
+    pass: process.env.EMAIL_PASS // CAMBIA ESTO POR TU CONTRASEÑA O USA VARIABLES DE ENTORNO
   }
 });
 
