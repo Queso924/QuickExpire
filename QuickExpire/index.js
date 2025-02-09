@@ -67,7 +67,7 @@ app.post('/send-email', async (req, res) => {
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,  // Usa las variables de entorno
   process.env.GOOGLE_CLIENT_SECRET,
-  "http://quickexpire.onrender.com/auth/google/callback"  // Cambia a tu dominio en producción
+  "https://quickexpire.onrender.com/auth/google/callback"  // Cambia a tu dominio en producción
 );
 
 // Ruta para obtener el enlace de autenticación con Google
