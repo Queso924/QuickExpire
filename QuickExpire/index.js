@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer'); // Importar nodemailer
 const app = express();
-const port = 10000;
+const port = 3000;
 
 // Configurar que Express confíe en el proxy (útil en producción)
 app.set('trust proxy', true);
@@ -16,11 +16,11 @@ const upload = multer({
   limits: { fileSize: 8 * 1024 * 1024 * 1024 } // Límite de 8GB (ajustable)
 });
 
-app.use(express.json({ limit: '10gb' })); 
-app.use(express.urlencoded({ limit: '10gb', extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Configurar credenciales de Google Drive
-const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+const credentials = require('./credentials.json');
 const auth = new google.auth.GoogleAuth({
   credentials: credentials,
   scopes: ['https://www.googleapis.com/auth/drive']
@@ -29,65 +29,83 @@ const drive = google.drive({ version: 'v3', auth });
 
 let tempFiles = {}; // Variable para llevar el control de los archivos temporales
 
-
+// Configurar transporte de correo
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER,  // Tu correo de Gmail
-    pass: process.env.EMAIL_PASS   // Contraseña de aplicación de Google
+    user: 'quickexpire@gmail.com', // CAMBIA ESTO POR TU CORREO
+    pass: 'zgzw ipvn ltad zenb' // CAMBIA ESTO POR TU CONTRASEÑA O USA VARIABLES DE ENTORNO
   }
 });
 
-// Ruta para enviar un email después de la subida
-app.post('/send-email', async (req, res) => {
-  const { email, fileLink } = req.body;
-
-  if (!email || !fileLink) {
-    return res.status(400).json({ error: "Faltan parámetros" });
-  }
-
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: '📎 Archivo compartido contigo',
-    text: `¡Hola! Un archivo ha sido subido y puedes descargarlo aquí: ${fileLink}\n\nEste enlace expirará pronto.`
-  };
-
+// Ruta para subir archivo
+app.post('/upload', upload.single('archivo'), async (req, res) => {
   try {
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ Correo enviado a ${email}`);
-    res.json({ message: "Correo enviado con éxito" });
+    if (!req.file) {
+      return res.status(400).json({ error: "No se ha subido ningún archivo." });
+    }
+
+    const expirationTime = Date.now() + parseInt(req.body.time) * 60000;
+    const filePath = req.file.path;
+    const email = req.body.email ? req.body.email.trim() : ""; // Asegurar que no sea undefined
+
+    const fileMetadata = {
+      name: req.file.originalname,
+      parents: ['16U4IvbnFx_Yon59VgbM-Hm8PzjM9kPc6']
+    };
+
+    const media = {
+      mimeType: req.file.mimetype,
+      body: fs.createReadStream(filePath)
+    };
+
+    const driveResponse = await drive.files.create({
+      resource: fileMetadata,
+      media: media,
+      fields: 'id',
+      uploadType: 'resumable'
+    });
+
+    const fileId = driveResponse.data.id;
+    tempFiles[fileId] = expirationTime;
+    console.log(`Archivo subido con ID: ${fileId}, expira en: ${req.body.time} minutos`);
+
+    // Eliminar el archivo temporal del servidor
+    fs.unlink(filePath, (err) => {
+      if (err) console.error(`Error eliminando archivo temporal: ${err}`);
+    });
+
+    // 📩 Enviar correo solo si el usuario proporcionó un email
+    if (email !== "") {
+      // Obtener protocolo y host para generar el enlace dinámicamente
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+      const host = req.headers.host;
+      const downloadLink = `${protocol}://${host}/download?file=${fileId}`;
+
+      const mailOptions = {
+        from: 'quickexpire@gmail.com', // Debe ser el mismo correo de autenticación
+        to: email,
+        subject: '¡Han compartido un archivo temporal contigo!',
+        text: `¡Hola! Acaban de compartir un archivo contigo. Puedes descargarlo en el siguiente enlace: ${downloadLink}\n\nEste enlace expirará en ${req.body.time} minutos.`
+      };
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error('❌ Error enviando el correo:', error);
+        } else {
+          console.log('✅ Correo enviado: ' + info.response);
+        }
+      });
+    } else {
+      console.log("⚠️ No se proporcionó un correo, no se enviará email.");
+    }
+
+    res.json({ fileId });
   } catch (error) {
-    console.error("❌ Error enviando el correo:", error);
-    res.status(500).json({ error: "No se pudo enviar el correo." });
+    console.error("❌ Error al subir archivo:", error);
+    res.status(500).json({ error: "Error al subir archivo." });
   }
 });
-
-
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,  // Usa las variables de entorno
-  process.env.GOOGLE_CLIENT_SECRET,
-  "https://quickexpire.onrender.com/auth/google/callback"  // Cambia a tu dominio en producción
-);
-
-// Ruta para obtener el enlace de autenticación con Google
-app.get('/auth/google', (req, res) => {
-  const authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: ['https://www.googleapis.com/auth/drive.file']
-  });
-  res.json({ url: authUrl });
-});
-
-// Ruta de redirección después de autenticación
-app.get('/auth/google/callback', async (req, res) => {
-  const { code } = req.query;
-  const { tokens } = await oauth2Client.getToken(code);
-  oauth2Client.setCredentials(tokens);
-  res.json(tokens); // Envía los tokens al frontend
-});
-
-
 
 // Ruta para eliminar archivos expirados
 setInterval(async () => {
@@ -149,15 +167,6 @@ app.get('/download', async (req, res) => {
 // Servir archivos estáticos
 app.use(express.static('public'));
 
-app.use((req, res, next) => {
-  req.setTimeout(0); // Deshabilita timeout en solicitudes largas
-  res.setTimeout(0);
-  next();
-});
-
-
-
 app.listen(port, () => {
   console.log(`Servidor corriendo en http://localhost:${port}`);
 });
-
