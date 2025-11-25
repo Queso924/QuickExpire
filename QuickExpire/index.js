@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Configurar credenciales de Google Drive
-const credentials = require('./credentials.json');
+const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
 const auth = new google.auth.GoogleAuth({
   credentials: credentials,
   scopes: ['https://www.googleapis.com/auth/drive']
